@@ -1,0 +1,1517 @@
+---
+title: "Who should Melbourne Victory Recruit?"
+output: 
+  word_document:
+    reference_doc: "~/Documents/MSc Sport Data Analytics/B1701 - Recruitment Analytics in Sport/Assessments/r markdown/RecruitmentAssessment/B1701_202483517_Rmd_Template.docx"
+    toc: TRUE
+    toc_depth: 3
+date: "2025-11-20"
+csl: "ieee.csl"
+bibliography: "rmd1.bib"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+\newpage
+
+## Introduction
+
+Scouting involves analysing players globally to identify suitable candidates for specific team positions [@ghar_data_2021]. Evaluating players is challenging due to the vast number of leagues worldwide. Traditional scouting methods face limitations like high costs, limited scalability, and subjective biases [@pappalardo_playerank_2019]. Integrating data analytics enhances the scouting process by saving significant time and resources, as well as improving recruitment accuracy [@pappalardo_playerank_2019; @pretto_development_2022]. In modern football, data-driven insights are essential, ensuring objectivity and enabling well-informed decisions for building competitive teams [@raajesh_cricket_2024]. Data analytics, can secure clubs’ long-term success [@herberger_impact_2021].
+
+Building on this understanding, Melbourne Victory, an Australian Women’s League club, identified a critical defensive imbalance during their 2023/24 season analysis. Despite excelling in goal-scoring, defensive shortcomings prevented them from dominating. To address this challenge, they sought a data-driven solution to identify and recruit up-and-coming defenders who could strengthen their defence.
+
+Effective recruitment must correspond with a team’s tactical approach, since a player excelling in one system may struggle in another [@ghar_data_2021]. This is especially important when assembling a strong defensive unit, as strong defensive performance is often the key to victory. Teams that concede fewer goals are more likely to succeed [@seippel_attacking_2018]. This underscores the importance of selecting robust key performance indicators (KPIs) to identify players aligning with Melbourne Victory’s view of success [@jamil_investigation_2021].
+
+This report uses freely available FBref datasets analysed in R to recommend five players for recruitment and assess underperforming defenders within the current squad, providing actionable insights for squad improvement.
+
+\newpage
+
+## Methodology
+
+### Dataset
+
+FBref.com (<https://fbref.com/>) [@noauthor_fbref_2023] provides advanced player performance data for the 2023/24 season from the National Women’s Soccer League (NWSL), FA Women’s Super League (FA WSL), Liga F, Frauen-Bundesliga, Première Ligue, Serie A, and A-League Women. It is the most complete source for women’s football data online [8] and it includes every ball-related event such as, passes, shots, duels, and interceptions. This data has been extensively used in several studies [@jishnu_football_2022; @phatak_context_2022; @zaytseva_moneyball_2020] and is regarded as reliable [@hopkins_how_2022]. Although StatsBomb was considered, for its prestigious reputation [@narayanan_data-driven_2023], its available data (limited to the 2023 Women’s World Cup) restricted its utility for league-based analysis.
+
+```{r import-data, include=FALSE, warning=FALSE}
+# Empty environment 
+rm(list=ls())
+
+# Load packages
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(moments)
+library(fmsb)
+library(flextable)
+
+#---------------------------------------------
+# Scrape and Import data 
+#---------------------------------------------
+
+# Scraping data from FBref 2023/24 season including the following stats: [player_details], [summary], [passing], [defense], [possession], [misc]
+# Data has been scraped from all 6 women's leagues available on FBref
+library(devtools) 
+devtools::install_github("JaseZiv/worldfootballR") # Installing worldfootballR
+library(worldfootballR) 
+
+
+# MatchUrlsS <- fb_match_urls(country = "ESP", gender = "F", season_end_year = 2024, tier="1st")
+
+# PlayerStats2024SumDFSpain <- fb_advanced_match_stats(match_url = MatchUrlsS, stat_type = "summary", team_or_player = "player")
+# PlayerStats2024PassDFSpain <- fb_advanced_match_stats(match_url = MatchUrlsS, stat_type = "passing", team_or_player = "player")
+# PlayerStats2024DefDFSpain <- fb_advanced_match_stats(match_url = MatchUrlsS, stat_type = "defense", team_or_player = "player")
+# PlayerStats2024PosDFSpain <- fb_advanced_match_stats(match_url = MatchUrlsS, stat_type = "possession", team_or_player = "player")
+# PlayerStats2024MiscDFSpain <- fb_advanced_match_stats(match_url = MatchUrlsS, stat_type = "misc", team_or_player = "player")
+
+
+# MatchUrlsE <- fb_match_urls(country = "ENG", gender = "F", season_end_year = 2024, tier="1st")
+
+# PlayerStats2024SumDFEng <- fb_advanced_match_stats(match_url = MatchUrlsE, stat_type = "summary", team_or_player = "player")
+# PlayerStats2024PassDFEng <- fb_advanced_match_stats(match_url = MatchUrlsE, stat_type = "passing", team_or_player = "player")
+# PlayerStats2024DefDFEng <- fb_advanced_match_stats(match_url = MatchUrlsE, stat_type = "defense", team_or_player = "player")
+# PlayerStats2024PosDFEng <- fb_advanced_match_stats(match_url = MatchUrlsE, stat_type = "possession", team_or_player = "player")
+# PlayerStats2024MiscDFEng <- fb_advanced_match_stats(match_url = MatchUrlsE, stat_type = "misc", team_or_player = "player")
+
+
+# MatchUrlsU <- fb_match_urls(country = "USA", gender = "F", season_end_year = 2024, tier="1st")
+
+# PlayerStats2024SumDFUsa <- fb_advanced_match_stats(match_url = MatchUrlsU, stat_type = "summary", team_or_player = "player")
+# PlayerStats2024PassDFUsa <- fb_advanced_match_stats(match_url = MatchUrlsU, stat_type = "passing", team_or_player = "player")
+# PlayerStats2024DefDFUsa <- fb_advanced_match_stats(match_url = MatchUrlsU, stat_type = "defense", team_or_player = "player")
+# PlayerStats2024PosDFUsa <- fb_advanced_match_stats(match_url = MatchUrlsU, stat_type = "possession", team_or_player = "player")
+# PlayerStats2024MiscDFUsa <- fb_advanced_match_stats(match_url = MatchUrlsU, stat_type = "misc", team_or_player = "player")
+
+
+# MatchUrlsG <- fb_match_urls(country = "GER", gender = "F", season_end_year = 2024, tier="1st")
+
+# PlayerStats2024SumDFGer <- fb_advanced_match_stats(match_url = MatchUrlsG, stat_type = "summary", team_or_player = "player")
+# PlayerStats2024PassDFGer <- fb_advanced_match_stats(match_url = MatchUrlsG, stat_type = "passing", team_or_player = "player")
+# PlayerStats2024DefDFGer <- fb_advanced_match_stats(match_url = MatchUrlsG, stat_type = "defense", team_or_player = "player")
+# PlayerStats2024PosDFGer <- fb_advanced_match_stats(match_url = MatchUrlsG, stat_type = "possession", team_or_player = "player")
+# PlayerStats2024MiscDFGer <- fb_advanced_match_stats(match_url = MatchUrlsG, stat_type = "misc", team_or_player = "player")
+
+
+# MatchUrlsF <- fb_match_urls(country = "FRA", gender = "F", season_end_year = 2024, tier="1st")
+
+# PlayerStats2024SumDFFra <- fb_advanced_match_stats(match_url = MatchUrlsF, stat_type = "summary", team_or_player = "player")
+# PlayerStats2024PassDFFra <- fb_advanced_match_stats(match_url = MatchUrlsF, stat_type = "passing", team_or_player = "player")
+# PlayerStats2024DefDFFra <- fb_advanced_match_stats(match_url = MatchUrlsF, stat_type = "defense", team_or_player = "player")
+# PlayerStats2024PosDFFra <- fb_advanced_match_stats(match_url = MatchUrlsF, stat_type = "possession", team_or_player = "player")
+# PlayerStats2024MiscDFFra <- fb_advanced_match_stats(match_url = MatchUrlsF, stat_type = "misc", team_or_player = "player")
+
+
+# MatchUrlsI <- fb_match_urls(country = "ITA", gender = "F", season_end_year = 2024, tier="1st")
+
+# PlayerStats2024SumDFIta <- fb_advanced_match_stats(match_url = MatchUrlsI, stat_type = "summary", team_or_player = "player")
+# PlayerStats2024PassDFIta <- fb_advanced_match_stats(match_url = MatchUrlsI, stat_type = "passing", team_or_player = "player")
+# PlayerStats2024DefDFIta <- fb_advanced_match_stats(match_url = MatchUrlsI, stat_type = "defense", team_or_player = "player")
+# PlayerStats2024PosDFIta <- fb_advanced_match_stats(match_url = MatchUrlsI, stat_type = "possession", team_or_player = "player")
+# PlayerStats2024MiscDFIta <- fb_advanced_match_stats(match_url = MatchUrlsI, stat_type = "misc", team_or_player = "player")
+
+
+#MatchUrlsA <- fb_match_urls(country = "AUS", gender = "F", season_end_year = 2024, tier="1st")
+
+# PlayerStats2024SumDFAus <- fb_advanced_match_stats(match_url = MatchUrlsA, stat_type = "summary", team_or_player = "player")
+# PlayerStats2024PassDFAus <- fb_advanced_match_stats(match_url = MatchUrlsA, stat_type = "passing", team_or_player = "player")
+# PlayerStats2024DefDFAus <- fb_advanced_match_stats(match_url = MatchUrlsA, stat_type = "defense", team_or_player = "player")
+# PlayerStats2024PosDFAus <- fb_advanced_match_stats(match_url = MatchUrlsA, stat_type = "possession", team_or_player = "player")
+# PlayerStats2024MiscDFAus <- fb_advanced_match_stats(match_url = MatchUrlsA, stat_type = "misc", team_or_player = "player")
+
+load("/Users/izzybrown/Downloads/Izzy.RData")
+
+
+# Combining individual player stats for each league  
+CombinedPlayerDataDFEng<-merge(PlayerStats2024SumDFEng,PlayerStats2024PassDFEng, all=TRUE)
+CombinedPlayerDataDFEng <- CombinedPlayerDataDFEng %>%
+  merge(PlayerStats2024DefDFEng, all=TRUE)%>%
+  merge(PlayerStats2024PosDFEng, all=TRUE) %>%
+  merge(PlayerStats2024MiscDFEng, all=TRUE) 
+
+CombinedPlayerDataDFUsa<-merge(PlayerStats2024SumDFUsa,PlayerStats2024PassDFUsa, all=TRUE)
+CombinedPlayerDataDFUsa <- CombinedPlayerDataDFUsa %>%
+  merge(PlayerStats2024DefDFUsa, all=TRUE)%>%
+  merge(PlayerStats2024PosDFUsa, all=TRUE) %>%
+  merge(PlayerStats2024MiscDFUsa, all=TRUE) 
+
+CombinedPlayerDataDFSpain<-merge(PlayerStats2024SumDFSpain,PlayerStats2024PassDFSpain, all=TRUE)
+CombinedPlayerDataDFSpain <- CombinedPlayerDataDFSpain %>%
+  merge(PlayerStats2024DefDFSpain, all=TRUE)%>%
+  merge(PlayerStats2024PosDFSpain, all=TRUE) %>%
+  merge(PlayerStats2024MiscDFSpain, all=TRUE) 
+
+CombinedPlayerDataDFAus<-merge(PlayerStats2024SumDFAus,PlayerStats2024PassDFAus, all=TRUE)
+CombinedPlayerDataDFAus <- CombinedPlayerDataDFAus %>%
+  merge(PlayerStats2024DefDFAus, all=TRUE)%>%
+  merge(PlayerStats2024PosDFAus, all=TRUE) %>%
+  merge(PlayerStats2024MiscDFAus, all=TRUE) 
+
+CombinedPlayerDataDFGer<-merge(PlayerStats2024SumDFGer,PlayerStats2024PassDFGer, all=TRUE)
+CombinedPlayerDataDFGer <- CombinedPlayerDataDFGer %>%
+  merge(PlayerStats2024DefDFGer, all=TRUE)%>%
+  merge(PlayerStats2024PosDFGer, all=TRUE) %>%
+  merge(PlayerStats2024MiscDFGer, all=TRUE) 
+
+CombinedPlayerDataDFFra<-merge(PlayerStats2024SumDFFra,PlayerStats2024PassDFFra, all=TRUE)
+CombinedPlayerDataDFFra <- CombinedPlayerDataDFFra %>%
+  merge(PlayerStats2024DefDFFra, all=TRUE)%>%
+  merge(PlayerStats2024PosDFFra, all=TRUE) %>%
+  merge(PlayerStats2024MiscDFFra, all=TRUE) 
+
+CombinedPlayerDataDFIta<-merge(PlayerStats2024SumDFIta,PlayerStats2024PassDFIta, all=TRUE)
+CombinedPlayerDataDFIta <- CombinedPlayerDataDFIta %>%
+  merge(PlayerStats2024DefDFIta, all=TRUE)%>%
+  merge(PlayerStats2024PosDFIta, all=TRUE) %>%
+  merge(PlayerStats2024MiscDFIta, all=TRUE) 
+
+
+# Removing previous dataframes
+rm(PlayerStats2024DefDFEng, PlayerStats2024MiscDFEng, PlayerStats2024PassDFEng, PlayerStats2024PassTypesDFEng, PlayerStats2024PosDFEng, PlayerStats2024SumDFEng)
+rm(PlayerStats2024DefDFUsa, PlayerStats2024MiscDFUsa, PlayerStats2024PassDFUsa, PlayerStats2024PassTypesDFUsa, PlayerStats2024PosDFUsa, PlayerStats2024SumDFUsa)
+rm(PlayerStats2024DefDFSpain, PlayerStats2024MiscDFSpain, PlayerStats2024PassDFSpain, PlayerStats2024PassTypesDFSpain, PlayerStats2024PosDFSpain, PlayerStats2024SumDFSpain)
+rm(PlayerStats2024DefDFAus, PlayerStats2024MiscDFAus, PlayerStats2024PassDFAus, PlayerStats2024PosDFAus, PlayerStats2024SumDFAus)
+rm(PlayerStats2024DefDFGer, PlayerStats2024MiscDFGer, PlayerStats2024PassDFGer, PlayerStats2024PosDFGer, PlayerStats2024SumDFGer)
+rm(PlayerStats2024DefDFFra, PlayerStats2024MiscDFFra, PlayerStats2024PassDFFra, PlayerStats2024PosDFFra, PlayerStats2024SumDFFra)
+rm(PlayerStats2024DefDFIta, PlayerStats2024MiscDFIta, PlayerStats2024PassDFIta, PlayerStats2024PosDFIta, PlayerStats2024SumDFIta)
+
+
+# Keep only specific columns needed for analysis
+CombinedEng <- CombinedPlayerDataDFEng %>%
+  select(Match_Date, League, Team, Player, Pos, Age, Min, Int, PrgC_Carries, PrgP_Passes, Tkl, Blocks, Cmp_Passes, TklW, Won_percent_Aerial_Duels)
+
+CombinedUsa <- CombinedPlayerDataDFUsa %>%
+  select(Match_Date, League, Team, Player, Pos, Age, Min, Int, PrgC_Carries, PrgP_Passes, Tkl, Blocks, Cmp_Passes, PrgP_Passes, TklW, Won_percent_Aerial_Duels)
+
+CombinedSpain <- CombinedPlayerDataDFSpain %>%
+  select(Match_Date, League, Team, Player, Pos, Age, Min, Int, PrgC_Carries, PrgP_Passes, Tkl, Blocks, Cmp_Passes, PrgP_Passes, TklW, Won_percent_Aerial_Duels)
+
+CombinedAus <- CombinedPlayerDataDFAus %>%
+  select(Match_Date, League, Team, Player, Pos, Age, Min, Int, PrgC_Carries, PrgP_Passes, Tkl, Blocks, Cmp_Passes, PrgP_Passes, TklW, Won_percent_Aerial_Duels)
+
+CombinedGer <- CombinedPlayerDataDFGer %>%
+  select(Match_Date, League, Team, Player, Pos, Age, Min, Int, PrgC_Carries, PrgP_Passes, Tkl, Blocks, Cmp_Passes, PrgP_Passes, TklW, Won_percent_Aerial_Duels)
+
+CombinedFra <- CombinedPlayerDataDFFra %>%
+  select(Match_Date, League, Team, Player, Pos, Age, Min, Int, PrgC_Carries, PrgP_Passes, Tkl, Blocks, Cmp_Passes, PrgP_Passes, TklW, Won_percent_Aerial_Duels)
+
+CombinedIta <- CombinedPlayerDataDFIta %>%
+  select(Match_Date, League, Team, Player, Pos, Age, Min, Int, PrgC_Carries, PrgP_Passes, Tkl, Blocks, Cmp_Passes, PrgP_Passes, TklW, Won_percent_Aerial_Duels)
+
+
+# Removing previous dataframes
+rm(CombinedPlayerDataDFAus, CombinedPlayerDataDFEng, CombinedPlayerDataDFFra, CombinedPlayerDataDFGer, CombinedPlayerDataDFIta, CombinedPlayerDataDFSpain, CombinedPlayerDataDFUsa)
+```
+
+### Selection of KPIs
+
+To effectively evaluate player performance, a set of measurable KPIs were established based on the attributes emphasised by management, who stated they “would like to gain a progressive defender who is strong on the ball and able to make successful interceptions”. They also incorporate key qualities highlighted in the literature as crucial for defensive roles.
+
+1.  *Interceptions*: These occur when a player stops the ball from reaching its target by intercepting any pass between opposing players [@jamil_investigation_2021]. They are crucial as intercepting passes was identified as one of the most important skills for defenders [@guimaraes_data_2018; @hong_relative_2017]. They significantly impact an opponent’s ability to organise and execute shots on goal [@ruan_quantifying_2022].
+2.  *Progressive Carries* [@guimaraes_data_2018]: “Carries that move the ball towards the opponent’s goal line at least 10 yards from its furthest point in the last six passes, or any carry into the penalty area” [@noauthor_fbref_2023]. A key KPI since Melbourne Victory would like a defender who is both strong on the ball and who can play progressively. In the Premier League (2013-18), 7% of sequences containing progressive carries resulted in shot [@mckeever_identifying_2024], emphasising their value as a KPI. This approach ensures that Melbourne Victory recruit defenders who are strong on the ball, capable of retaining possession and contributing to progressive play.
+3.  *Tackles Won* [@hong_relative_2017; @kim_discovering_2020]: Refers to instances where a player gains possession of the ball following successful dispossession of an opponent [@jamil_investigation_2021]. They are important to evaluate as they contribute to winning outcomes [@plakias_tactical_2024]. The emphasis on tackles won rather than tackles made overall can be explained by [@plakias_tactical_2024]’s caution against aggressive behaviours that may result in fouls and yellow cards. It is also important to evaluate the percentage of tackles won. A player may register a high number of successful tackles but also accumulate a significant number of unsuccessful attempts, potentially resulting in fouls.
+4.  *Other KPIs*: aerial duels won [@hong_relative_2017; @kim_discovering_2020], blocks [@guimaraes_data_2018; @kim_discovering_2020], and passes completed [@ferreira_impact_2021; @guimaraes_data_2018].
+
+### Data Cleaning and Pre-Processing
+
+Data cleaning and pre-processing steps are essential to eliminate any noise and inconsistencies, providing high quality data for meaningful analysis [@maharana_review_2022]. Cleaning, pre-processing, and analyses were conducted using R4.4.2 [@r_score_team_r_2023], where individual player statistics were combined into one data frame per league. Irrelevant variables were removed, and those relevant (league, team, player name, match date, age, position, minutes played, interceptions, tackles, tackles won, blocks, percentage of aerial duels won, passes completed, progressive carries, and progressive passes) were retained. Defensive positions were filtered and to focus on emerging talent, players above the age of 28 were excluded, aligning with the average defender’s peak age range [@dendir_when_2016; @kalen_are_2019]. Furthermore, players who had less than 55 minutes of play were excluded to align with the average substitution time [@wei_analysing_2024].
+
+Missing data was addressed through imputation. For example, the percentage of aerial duels won was missing around 30% of data in every league, and removing these observations would result in a large loss of valuable data. So, after checking for outliers, (which were absent) mean imputation was applied to avoid data loss and retain statistical power [@rehman_development_2024]. In both the FA WSL and Première Ligue, a substantial proportion of missing data was found in individual match dates. Consequently, data from these matches was removed.
+
+```{r data-cleaning, include=FALSE, warning=FALSE}
+#---------------------------------------------
+# Data Cleaning  
+#---------------------------------------------
+
+# ------- England ------- #
+
+# Check the structure of df
+str(CombinedEng)
+
+
+# Change variable types 
+CombinedEng$Match_Date <- as.Date(CombinedEng$Match_Date)
+CombinedEng$League <- as.factor(CombinedEng$League)
+CombinedEng$Team <- as.factor(CombinedEng$Team)
+CombinedEng$Player <- as.factor(CombinedEng$Player)
+CombinedEng$Pos <- as.factor(CombinedEng$Pos)
+CombinedEng$Age <- as.numeric(sub("-.*", "", CombinedEng$Age)) # Extracting the first number so their age is in years not years and days
+
+summary(CombinedEng) # summary of dataframe
+
+
+# Filter KPIs
+levels(CombinedEng$Pos) # Check which levels include defensive positions
+CombinedEngFiltered <- CombinedEng[grepl("B", CombinedEng$Pos), ] %>% # Filtering for those including B for "Back" 
+  filter(Age < 28) %>% # Filtering for desired age
+  filter(Min > 55) # Filtering for desired playing time 
+
+
+# Check for missing data 
+missing_data <- is.na(CombinedEngFiltered)
+total_missing_values <- sum(missing_data) # Total amount of missing data
+print(total_missing_values)
+missing_values_per_variable <- colSums(missing_data) # Missing values per variable 
+print(missing_values_per_variable)
+proportion_missing_values <- colMeans(missing_data) # Proportion of missing values per variable
+print(proportion_missing_values)
+
+
+# Removing rows where match date is 2024-05-18
+CombinedEngNew <- CombinedEngFiltered[CombinedEngFiltered$Match_Date != "2024-05-18", ]
+
+
+# Check missing values now
+missing_data <- is.na(CombinedEngNew)
+total_missing_values <- sum(missing_data) # Total amount of missing data
+print(total_missing_values)
+missing_values_per_variable <- colSums(missing_data) # Missing values per variable 
+print(missing_values_per_variable)
+proportion_missing_values <- colMeans(missing_data) # Proportion of missing values per variable
+print(proportion_missing_values)
+
+
+# Check for outliers before imputation  
+boxplot(CombinedEngNew$Won_percent_Aerial_Duels, na.rm =TRUE) 
+
+# Impute na values with mean value 
+mean_aerials <- mean(CombinedEngNew$Won_percent_Aerial_Duels, na.rm = TRUE)
+CombinedEngNew$Won_percent_Aerial_Duels[is.na(CombinedEngNew$Won_percent_Aerial_Duels)] <- mean_aerials
+
+
+# Remove unwanted df
+rm(CombinedEng, CombinedEngFiltered, missing_data)
+
+
+# ------- Usa ------- #
+
+str(CombinedUsa) # Check structure of data set
+
+
+# Change variable types 
+CombinedUsa$Match_Date <- as.Date(CombinedUsa$Match_Date)
+CombinedUsa$League <- as.factor(CombinedUsa$League)
+CombinedUsa$Team <- as.factor(CombinedUsa$Team)
+CombinedUsa$Player <- as.factor(CombinedUsa$Player)
+CombinedUsa$Pos <- as.factor(CombinedUsa$Pos)
+CombinedUsa$Age <- as.numeric(sub("-.*", "", CombinedUsa$Age)) # Extracting the first number so their age is in years not years and days
+
+summary(CombinedUsa) # summary of dataframe
+
+
+# Filter KPIs
+levels(CombinedUsa$Pos) # Check which levels include defensive positions
+CombinedUsaFiltered <- CombinedUsa[grepl("B", CombinedUsa$Pos), ] %>% # Filtering for those including B for "Back" 
+  filter(Age < 28) %>% # Filtering for desired age
+  filter(Min > 55) # Filtering for desired playing time 
+
+
+# Check for missing data 
+missing_data <- is.na(CombinedUsaFiltered)
+total_missing_values <- sum(missing_data) # Total amount of missing data
+print(total_missing_values)
+missing_values_per_variable <- colSums(missing_data) # Missing values per variable 
+print(missing_values_per_variable)
+proportion_missing_values <- colMeans(missing_data) # Proportion of missing values per variable
+print(proportion_missing_values)
+
+
+# Check for outliers before imputation  
+boxplot(CombinedUsaFiltered$Won_percent_Aerial_Duels, na.rm =TRUE) 
+
+# Impute na values with mean value 
+mean_aerials <- mean(CombinedUsaFiltered$Won_percent_Aerial_Duels, na.rm = TRUE)
+CombinedUsaFiltered$Won_percent_Aerial_Duels[is.na(CombinedUsaFiltered$Won_percent_Aerial_Duels)] <- mean_aerials
+
+
+# Remove unwanted df
+rm(CombinedUsa, missing_data)
+
+
+# ------- Spain ------- #
+
+str(CombinedSpain) # Check structure of data set
+
+
+# Change variable types 
+CombinedSpain$Match_Date <- as.Date(CombinedSpain$Match_Date)
+CombinedSpain$League <- as.factor(CombinedSpain$League)
+CombinedSpain$Team <- as.factor(CombinedSpain$Team)
+CombinedSpain$Player <- as.factor(CombinedSpain$Player)
+CombinedSpain$Pos <- as.factor(CombinedSpain$Pos)
+CombinedSpain$Age <- as.numeric(sub("-.*", "", CombinedSpain$Age)) # Extracting the first number so their age is in years not years and days
+
+summary(CombinedSpain) # summary of dataframe
+
+
+# Filter KPIs
+levels(CombinedSpain$Pos) # Check which levels include defensive positions
+CombinedSpainFiltered <- CombinedSpain[grepl("B", CombinedSpain$Pos), ] %>% # Filtering for those including B for "Back" 
+  filter(Age < 28) %>% # Filtering for desired age
+  filter(Min > 55) # Filtering for desired playing time 
+
+
+# Check for missing data 
+missing_data <- is.na(CombinedSpainFiltered)
+total_missing_values <- sum(missing_data) # Total amount of missing data
+print(total_missing_values)
+missing_values_per_variable <- colSums(missing_data) # Missing values per variable 
+print(missing_values_per_variable)
+proportion_missing_values <- colMeans(missing_data) # Proportion of missing values per variable
+print(proportion_missing_values)
+
+
+# Check for outliers before imputation  
+boxplot(CombinedSpainFiltered$Won_percent_Aerial_Duels, na.rm =TRUE) 
+
+# Impute na values with mean value 
+mean_aerials <- mean(CombinedSpainFiltered$Won_percent_Aerial_Duels, na.rm = TRUE)
+CombinedSpainFiltered$Won_percent_Aerial_Duels[is.na(CombinedSpainFiltered$Won_percent_Aerial_Duels)] <- mean_aerials
+
+
+# Remove unwanted df
+rm(CombinedSpain, missing_data)
+
+
+# ------- Australia ------- #
+
+str(CombinedAus) # Check structure of data set
+
+
+# Change variable types 
+CombinedAus$Match_Date <- as.Date(CombinedAus$Match_Date)
+CombinedAus$League <- as.factor(CombinedAus$League)
+CombinedAus$Team <- as.factor(CombinedAus$Team)
+CombinedAus$Player <- as.factor(CombinedAus$Player)
+CombinedAus$Pos <- as.factor(CombinedAus$Pos)
+CombinedAus$Age <- as.numeric(sub("-.*", "", CombinedAus$Age)) # Extracting the first number so their age is in years not years and days
+
+summary(CombinedAus) # summary of dataframe
+
+
+# Filter KPIs
+levels(CombinedAus$Pos) # Check which levels include defensive positions
+CombinedAusFiltered <- CombinedAus[grepl("B", CombinedAus$Pos), ] %>% # Filtering for those including B for "Back" 
+  filter(Age < 28) %>% # Filtering for desired age
+  filter(Min > 55) # Filtering for desired playing time 
+
+
+# Check for missing data 
+missing_data <- is.na(CombinedAusFiltered)
+total_missing_values <- sum(missing_data) # Total amount of missing data
+print(total_missing_values)
+missing_values_per_variable <- colSums(missing_data) # Missing values per variable 
+print(missing_values_per_variable)
+proportion_missing_values <- colMeans(missing_data) # Proportion of missing values per variable
+print(proportion_missing_values)
+
+
+# Check for outliers before imputation  
+boxplot(CombinedAusFiltered$Won_percent_Aerial_Duels, na.rm =TRUE) 
+
+# Impute na values with mean value 
+mean_aerials <- mean(CombinedAusFiltered$Won_percent_Aerial_Duels, na.rm = TRUE)
+CombinedAusFiltered$Won_percent_Aerial_Duels[is.na(CombinedAusFiltered$Won_percent_Aerial_Duels)] <- mean_aerials
+
+
+# Remove unwanted df
+rm(CombinedAus, missing_data)
+
+
+# ------- France ------- #
+
+str(CombinedFra) # Check structure of data set
+
+
+# Change variable types 
+CombinedFra$Match_Date <- as.Date(CombinedFra$Match_Date)
+CombinedFra$League <- as.factor(CombinedFra$League)
+CombinedFra$Team <- as.factor(CombinedFra$Team)
+CombinedFra$Player <- as.factor(CombinedFra$Player)
+CombinedFra$Pos <- as.factor(CombinedFra$Pos)
+CombinedFra$Age <- as.numeric(sub("-.*", "", CombinedFra$Age)) # Extracting the first number so their age is in years not years and days
+
+summary(CombinedFra) # summary of dataframe
+
+
+# Filter KPIs
+levels(CombinedFra$Pos) # Check which levels include defensive positions
+CombinedFraFiltered <- CombinedFra[grepl("B", CombinedFra$Pos), ] %>% # Filtering for those including B for "Back" 
+  filter(Age < 28) %>% # Filtering for desired age
+  filter(Min > 55) # Filtering for desired playing time 
+
+
+# Check for missing data 
+missing_data <- is.na(CombinedFraFiltered)
+total_missing_values <- sum(missing_data) # Total amount of missing data
+print(total_missing_values)
+missing_values_per_variable <- colSums(missing_data) # Missing values per variable 
+print(missing_values_per_variable)
+proportion_missing_values <- colMeans(missing_data) # Proportion of missing values per variable
+print(proportion_missing_values)
+
+# Removing rows where match date is 2023-11-26 and 2023-12-08
+CombinedFraNew <- CombinedFraFiltered[CombinedFraFiltered$Match_Date != "2023-12-08" & CombinedFraFiltered$Match_Date != "2023-11-26", ] 
+
+
+# Check missing data now 
+missing_data <- is.na(CombinedFraNew)
+total_missing_values <- sum(missing_data) # Total amount of missing data
+print(total_missing_values)
+missing_values_per_variable <- colSums(missing_data) # Missing values per variable 
+print(missing_values_per_variable)
+proportion_missing_values <- colMeans(missing_data) # Proportion of missing values per variable
+print(proportion_missing_values)
+
+
+# Check for outliers before imputation  
+boxplot(CombinedFraFiltered$Won_percent_Aerial_Duels, na.rm =TRUE) 
+
+# Impute na values with mean value 
+mean_aerials <- mean(CombinedFraFiltered$Won_percent_Aerial_Duels, na.rm = TRUE)
+CombinedFraFiltered$Won_percent_Aerial_Duels[is.na(CombinedFraFiltered$Won_percent_Aerial_Duels)] <- mean_aerials
+
+
+# Remove unwanted df
+rm(CombinedFra, CombinedFraFiltered, missing_data)
+
+
+# ------- Italy ------- #
+
+str(CombinedIta) # Check structure of data set
+
+
+# Change variable types 
+CombinedIta$Match_Date <- as.Date(CombinedIta$Match_Date)
+CombinedIta$League <- as.factor(CombinedIta$League)
+CombinedIta$Team <- as.factor(CombinedIta$Team)
+CombinedIta$Player <- as.factor(CombinedIta$Player)
+CombinedIta$Pos <- as.factor(CombinedIta$Pos)
+CombinedIta$Age <- as.numeric(sub("-.*", "", CombinedIta$Age)) # Extracting the first number so their age is in years not years and days
+
+summary(CombinedIta) # summary of dataframe
+
+
+# Filter KPIs
+levels(CombinedIta$Pos) # Check which levels include defensive positions
+CombinedItaFiltered <- CombinedIta[grepl("B", CombinedIta$Pos), ] %>% # Filtering for those including B for "Back" 
+  filter(Age < 28) %>% # Filtering for desired age
+  filter(Min > 55) # Filtering for desired playing time 
+
+
+# Check for missing data 
+missing_data <- is.na(CombinedItaFiltered)
+total_missing_values <- sum(missing_data) # Total amount of missing data
+print(total_missing_values)
+missing_values_per_variable <- colSums(missing_data) # Missing values per variable 
+print(missing_values_per_variable)
+proportion_missing_values <- colMeans(missing_data) # Proportion of missing values per variable
+print(proportion_missing_values)
+
+
+# Check for outliers before imputation  
+boxplot(CombinedItaFiltered$Won_percent_Aerial_Duels, na.rm =TRUE) 
+
+# Impute na values with mean value 
+mean_aerials <- mean(CombinedItaFiltered$Won_percent_Aerial_Duels, na.rm = TRUE)
+CombinedItaFiltered$Won_percent_Aerial_Duels[is.na(CombinedItaFiltered$Won_percent_Aerial_Duels)] <- mean_aerials
+
+
+# Remove unwanted df
+rm(CombinedIta, missing_data)
+
+
+# ------- Germany ------- #
+
+str(CombinedGer) # Check structure of data set
+
+
+# Change variable types 
+CombinedGer$Match_Date <- as.Date(CombinedGer$Match_Date)
+CombinedGer$League <- as.factor(CombinedGer$League)
+CombinedGer$Team <- as.factor(CombinedGer$Team)
+CombinedGer$Player <- as.factor(CombinedGer$Player)
+CombinedGer$Pos <- as.factor(CombinedGer$Pos)
+CombinedGer$Age <- as.numeric(sub("-.*", "", CombinedGer$Age)) # Extracting the first number so their age is in years not years and days
+
+summary(CombinedGer) # summary of dataframe
+
+
+# Filter KPIs
+levels(CombinedGer$Pos) # Check which levels include defensive positions
+CombinedGerFiltered <- CombinedGer[grepl("B", CombinedGer$Pos), ] %>% # Filtering for those including B for "Back" 
+  filter(Age < 28) %>% # Filtering for desired age
+  filter(Min > 55) # Filtering for desired playing time 
+
+
+# Check for missing data 
+missing_data <- is.na(CombinedGerFiltered)
+total_missing_values <- sum(missing_data) # Total amount of missing data
+print(total_missing_values)
+missing_values_per_variable <- colSums(missing_data) # Missing values per variable 
+print(missing_values_per_variable)
+proportion_missing_values <- colMeans(missing_data) # Proportion of missing values per variable
+print(proportion_missing_values)
+
+
+# Check for outliers before imputation  
+boxplot(CombinedGerFiltered$Won_percent_Aerial_Duels, na.rm =TRUE) 
+
+# Impute na values with mean value 
+mean_aerials <- mean(CombinedGerFiltered$Won_percent_Aerial_Duels, na.rm = TRUE)
+CombinedGerFiltered$Won_percent_Aerial_Duels[is.na(CombinedGerFiltered$Won_percent_Aerial_Duels)] <- mean_aerials
+
+
+# Remove unwanted df
+rm(CombinedGer, missing_data)
+```
+
+### Adjusting for League Strength
+
+To adjust for league strength, rankings from the Global Football Rankings [@noauthor_top_2024], cross-referenced for reliability with [@noauthor_latest_2024], were used, with leagues ranked from one to twenty-four out of thirty-six. The rankings were as follows: FA WSL (1), NWSL (2), Liga F (3), Frauen-Bundesliga (4), Première Ligue (5), Serie A (6), A-League Women (24). A strength multiplier was calculated using the formula:
+
+-   $multiplier = (max rank + 1 – league rank) / max rank$
+
+Each KPI was adjusted by multiplying it by the league strength multiplier. This adjustment allowed for the comparison of players from leagues of varying competitive strengths.
+
+### Aggregating Data and Deriving Per-90 Statistics
+
+After adjusting for league strength, a new KPI – percentage of tackles won – was created. Player totals were then calculated, and the data was aggregated by player. Per-90 statistics were calculated using the formula:
+
+-   $per90stat = (totalstat / totalmin) * 90$
+
+Additionally, a separate data frame for Melbourne Victory defenders was created to allow comparisons with top performers across all leagues.
+
+```{r data-transformation, include=FALSE, warning=FALSE}
+#---------------------------------------------
+# Data Transformation 
+#---------------------------------------------
+
+# Adjusting for League Strength using Strength Multipliers
+
+# Create function
+adjust_kpis <- function(df, strength) {
+  df %>%
+    mutate(
+      AdjustedInt    = Int * strength,
+      AdjustedPrgC   = PrgC_Carries * strength,
+      AdjustedPrgP   = PrgP_Passes * strength,
+      AdjustedTkl    = Tkl * strength,
+      AdjustedBlocks = Blocks * strength,
+      AdjustedCmpP   = Cmp_Passes * strength,
+      AdjustedTklW   = TklW * strength,
+      AdjustedAer    = Won_percent_Aerial_Duels * strength
+    )
+}
+
+# Assign league strengths
+EngStrength   <- 1
+UsaStrength   <- 0.97
+SpainStrength <- 0.94
+GerStrength   <- 0.92
+FraStrength   <- 0.89
+ItaStrength   <- 0.86
+AusStrength   <- 0.36
+
+# Apply function
+CombinedEngNew        <- adjust_kpis(CombinedEngNew, EngStrength)
+CombinedFraNew        <- adjust_kpis(CombinedFraNew, FraStrength)
+CombinedUsaFiltered   <- adjust_kpis(CombinedUsaFiltered, UsaStrength)
+CombinedGerFiltered   <- adjust_kpis(CombinedGerFiltered, GerStrength)
+CombinedItaFiltered   <- adjust_kpis(CombinedItaFiltered, ItaStrength)
+CombinedSpainFiltered <- adjust_kpis(CombinedSpainFiltered, SpainStrength)
+CombinedAusFiltered   <- adjust_kpis(CombinedAusFiltered, AusStrength)
+
+# Combine all data sets
+CombinedData <- rbind(CombinedAusFiltered, CombinedEngNew, CombinedFraNew, CombinedGerFiltered, CombinedItaFiltered, CombinedSpainFiltered, CombinedUsaFiltered)
+
+
+# Keep only adjusted KPIs
+CombinedDataF <- CombinedData %>%
+  select(Match_Date, League, Team, Player, Pos, Age, Min, AdjustedInt, AdjustedPrgC, AdjustedPrgP, AdjustedTkl, AdjustedBlocks, AdjustedCmpP, AdjustedTklW, AdjustedAer)
+
+summary(CombinedDataF) # summary of all data 
+
+
+# Create new KPI that is % of tackles won
+CombinedDataF$PercentageTklW <- (CombinedDataF$AdjustedTklW / CombinedDataF$AdjustedTkl) * 100
+
+# Replace 'NaN' values that occur from previous calculation with '0' 
+CombinedDataF <- CombinedDataF %>%
+  mutate(PercentageTklW = ifelse(is.nan(PercentageTklW), 0, PercentageTklW)) 
+
+# Replace any "NaN" or "inf" with 0 (these figures have come from the fact that 0 can't be divided by 0 resulting in "NaN", and "Inf" has come from those who have made tackles but none of them have been successful so replacing with 0 suffices for both of these)
+CombinedDataF <- CombinedDataF %>%
+  mutate(AdjustedAer = ifelse(is.nan(AdjustedAer), 0, AdjustedAer)) %>%
+  mutate(PercentageTklW = ifelse(is.infinite(PercentageTklW), 0, PercentageTklW)) 
+
+
+# Calculate player totals and averages
+CombinedDataFinal <- CombinedDataF %>%
+  group_by(Player, League, Team, Age, Pos) %>% 
+  summarise(totalMin = sum(Min, na.rm = TRUE),
+            totalInt = sum(AdjustedInt, na.rm = TRUE),
+            totalPrgC = sum(AdjustedPrgC, na.rm = TRUE),
+            totalPrgP = sum(AdjustedPrgP, na.rm = TRUE), 
+            totalTkl = sum(AdjustedTkl, na.rm = TRUE), 
+            totalBlocks = sum(AdjustedBlocks, na.rm = TRUE), 
+            totalCmpP = sum(AdjustedCmpP, na.rm = TRUE),
+            totalTklW = sum(AdjustedTklW, na.rm = TRUE),
+            meanAerial = mean(AdjustedAer, na.rm = TRUE),
+            meanTklWp = mean(PercentageTklW, na.rm = TRUE))
+
+
+# Aggregate specific columns by player
+CombinedDataFinal1 <- CombinedDataFinal %>%
+  group_by(Player) %>%
+  summarise(
+    League = first(League),
+    Team = first(Team), 
+    Position = names(which.max(table(Pos))), # Assigning the mode position for each player 
+    Age = first(Age),
+    totalMin = sum(totalMin, na.rm = TRUE),
+    totalInt = sum(totalInt, na.rm = TRUE),
+    totalPrgC = sum(totalPrgC, na.rm = TRUE),
+    totalPrgP = sum(totalPrgP, na.rm = TRUE),
+    totalTkl = sum(totalTkl, na.rm = TRUE),
+    totalBlocks = sum(totalBlocks, na.rm = TRUE),
+    totalCmpP = sum(totalCmpP, na.rm = TRUE),
+    totalTklW = sum(totalTklW, na.rm = TRUE),
+    meanAerial = mean(meanAerial, na.rm = TRUE),
+    meanTklWp = mean(meanTklWp, na.rm = TRUE)
+  )
+
+
+# Obtain per 90 statistics
+CombinedDataFinal1$No_90s <- (CombinedDataFinal1$totalMin / 90)
+CombinedDataFinal1$Int_per90 <- (CombinedDataFinal1$totalInt / CombinedDataFinal1$totalMin) * 90
+CombinedDataFinal1$PrgC_per90 <- (CombinedDataFinal1$totalPrgC / CombinedDataFinal1$totalMin) * 90
+CombinedDataFinal1$PrgP_per90 <- (CombinedDataFinal1$totalPrgP / CombinedDataFinal1$totalMin) * 90
+CombinedDataFinal1$Tkl_per90 <- (CombinedDataFinal1$totalTkl / CombinedDataFinal1$totalMin) * 90
+CombinedDataFinal1$Blocks_per90 <- (CombinedDataFinal1$totalBlocks / CombinedDataFinal1$totalMin) * 90
+CombinedDataFinal1$CmpP_per90 <- (CombinedDataFinal1$totalCmpP / CombinedDataFinal1$totalMin) * 90
+CombinedDataFinal1$TklW_per90 <- (CombinedDataFinal1$totalTklW / CombinedDataFinal1$totalMin) * 90
+
+
+# Only keep per 90 stats for analysis 
+CombinedDataF1 <- CombinedDataFinal1 %>%
+  select(League, Team, Player, Position, Age, totalMin, No_90s, Int_per90, PrgC_per90, PrgP_per90, Tkl_per90, Blocks_per90, CmpP_per90, TklW_per90, meanAerial, meanTklWp)
+
+summary(CombinedDataF1)
+
+
+# Remove unwanted data frames
+rm(CombinedAusFiltered, CombinedEngNew, CombinedFraNew, CombinedGerFiltered, CombinedItaFiltered, CombinedSpainFiltered, CombinedUsaFiltered, CombinedData, CombinedDataF, CombinedDataFinal, CombinedDataFinal1)
+
+
+# Filter players who did not play at least 10 matches as this accounts for half the season 
+CombinedDataF1 <- CombinedDataF1 %>%
+  filter(No_90s > 10)
+
+
+# Create new data frame with just Melbourne Victory players 
+TeamOfInterest <- "Melbourne Victory"
+PlayersfromMV <- CombinedDataF1 %>%
+  filter(Team == TeamOfInterest)
+```
+
+### Analytical Techniques
+
+Descriptive statistics (mean, median, standard deviation, interquartile range) were calculated to understand the distribution of KPIs. A list of the top five players for each KPI was created. The performance of Melbourne Victory’s defenders was then compared to the top players globally across four key KPIs: interceptions, progressive carries, tackles won, and tackles won (%).
+
+Data normalisation was applied to scale each KPI, using its maximum value, from 0 to 1, ensuring comparability across players [@vafaei_data_2018]. A weighted scoring system was applied, with the following weightings based on the KPIs’ importance: interceptions (0.2), progressive carries (0.2), tackles won (0.15), tackles won % (0.15), minutes played (0.05), tackles (0.05), blocks (0.05), progressive passes (0.05), aerial duels won % (0.05), passes completed (0.05). The composite score for each player was calculated using this formula:
+
+-   $composite score = (KPI1 * weight1) + (KPI2 * weight2) + ...$
+
+This method allowed for a consistent and comparable measure for ranking players based on their overall performance, providing a holistic evaluation of their skills.
+
+\newpage
+
+## Results
+
+### Descriptive Statistics
+
+```{r summary-descriptives, include=FALSE, warning=FALSE}
+
+#---------------------------------------------
+# Descriptive Statistics
+#---------------------------------------------
+
+summary(CombinedDataF1) # summary stats for final data frame 
+
+
+# Descriptive table to include averages, median, standard deviation, and IQR for each KPI
+Descriptive <- CombinedDataF1 %>% 
+  summarise(`TotalNumber of Players`=round(n_distinct(Player),2),
+            `AvgAge (years)`= round(mean(Age, na.rm=TRUE),2),
+            `AvgMinutes Played`=round(mean(totalMin, na.rm = TRUE),2),
+            `AvgInterceptions per 90min`=round(mean(Int_per90, na.rm = TRUE),2),
+            `AvgPrgP per 90min`=round(mean(PrgP_per90, na.rm = TRUE),2),
+            `AvgPrgC per 90min`=round(mean(PrgC_per90, na.rm = TRUE),2),
+            `AvgTackles per 90min`= round(mean(Tkl_per90, na.rm = TRUE),2),
+            `AvgBlocks per 90min`= round(mean(Blocks_per90, na.rm = TRUE),2),
+            `AvgTacklesW per 90min`= round(mean(TklW_per90,na.rm=TRUE),2),
+            `AvgCmpP per 90min`= round(mean(CmpP_per90, na.rm=TRUE),2),
+            `AvgAerialsWonp`=round(mean(meanAerial, na.rm = TRUE),2),
+            `AvgTacklesWp`=round(mean(meanTklWp, na.rm = TRUE),2),
+            `MedAge (years)`= round(median(Age, na.rm=TRUE),2),
+            `MedMinutes Played`=round(median(totalMin, na.rm = TRUE),2),
+            `MedInterceptions per 90min`=round(median(Int_per90, na.rm = TRUE),2),
+            `MedPrgP per 90min`=round(median(PrgP_per90, na.rm = TRUE),2),
+            `MedPrgC per 90min`=round(median(PrgC_per90, na.rm = TRUE),2),
+            `MedTackles per 90min`= round(median(Tkl_per90, na.rm = TRUE),2),
+            `MedBlocks per 90min`= round(median(Blocks_per90, na.rm = TRUE),2),
+            `MedTacklesW per 90min`= round(median(TklW_per90,na.rm=TRUE),2),
+            `MedCmpP per 90min`= round(median(CmpP_per90, na.rm=TRUE),2),
+            `MedAerialsWonp`=round(median(meanAerial, na.rm = TRUE),2),
+            `MedTacklesWp`=round(median(meanTklWp, na.rm = TRUE),2),
+            `SDAge (years)`=round(sd(Age, na.rm = TRUE),2),
+            `SDMinutes Played`=round(sd(totalMin, na.rm = TRUE),2),
+            `SDInterceptions per 90min`= round(sd(Int_per90, na.rm = TRUE),2),
+            `SDPrgP per 90min`= round(sd(PrgP_per90, na.rm = TRUE),2),
+            `SDPrgC per 90min`= round(sd(PrgC_per90, na.rm = TRUE),2),
+            `SDTackles per 90min`= round(sd(Tkl_per90, na.rm = TRUE),2),
+            `SDBlocks per 90min`= round(sd(Blocks_per90, na.rm = TRUE),2),
+            `SDTacklesW per 90min`= round(sd(TklW_per90, na.rm = TRUE),2),
+            `SDCmpP per 90min`= round(sd(CmpP_per90, na.rm = TRUE),2),
+            `SDAerialsWonp`= round(sd(meanAerial, na.rm = TRUE),2),
+            `SDTacklesWp`= round(sd(meanTklWp, na.rm = TRUE),2),
+            `IQRAge (years)`= round(IQR(Age, na.rm=TRUE),2),
+            `IQRMinutes Played`=round(IQR(totalMin, na.rm = TRUE),2),
+            `IQRInterceptions per 90min`=round(IQR(Int_per90, na.rm = TRUE),2),
+            `IQRPrgP per 90min`=round(IQR(PrgP_per90, na.rm = TRUE),2),
+            `IQRPrgC per 90min`=round(IQR(PrgC_per90, na.rm = TRUE),2),
+            `IQRTackles per 90min`= round(IQR(Tkl_per90, na.rm = TRUE),2),
+            `IQRBlocks per 90min`= round(IQR(Blocks_per90, na.rm = TRUE),2),
+            `IQRTacklesW per 90min`= round(IQR(TklW_per90,na.rm=TRUE),2),
+            `IQRCmpP per 90min`= round(IQR(CmpP_per90, na.rm=TRUE),2),
+            `IQRAerialsWonp`=round(IQR(meanAerial, na.rm = TRUE),2),
+            `IQRTacklesWp`=round(IQR(meanTklWp, na.rm = TRUE),2),)  %>%
+  pivot_longer(
+    cols = everything(),
+    names_to = c(".value", "Statistic"),
+    names_pattern = "(Total|Avg|SD|IQR|Med)(.*)"
+  )
+
+```
+
+The final dataset for analysis included observations from 266 players from six leagues. The average age of the players was 23.42 ± 2.36 years, with an average playing time of 1,535 minutes. Additionally, a separate dataset from Melbourne Victory included 5 defensive players.
+
+Descriptive statistics for the combined dataset were calculated, providing measures of central tendency and dispersion, highlighting the variation across the dataset. A summary of these statistics is provided in table 1.
+
+##### Table 1. Descriptive statistics
+
+```{r descriptives, echo=FALSE, warning=FALSE}
+# Table for report
+
+Table1<-flextable(Descriptive)
+Table1 <- set_header_labels(Table1, 
+                            Statistic="", 
+                            Avg = "Average",
+                            Med = "Median")
+Table1<-set_table_properties(Table1, layout = "autofit")
+Table1 <- theme_vanilla(Table1)
+Table1 <- align(Table1, j = c(1:4), align = "center", part = "all")
+Table1
+
+```
+
+```{r distribution, include=FALSE, warning=FALSE}
+
+# Distribution table to show the skewness and kurtosis of each KPI
+library(moments)
+Distribution <- CombinedDataF1 %>% 
+  summarise(`TotalNumber of Players`=round(n_distinct(Player),2),
+            `SkewAge (years)`= round(skewness(Age, na.rm=TRUE),2),
+            `SkewMinutes Played`=round(skewness(totalMin, na.rm = TRUE),2),
+            `SkewInterceptions per 90min`=round(skewness(Int_per90, na.rm = TRUE),2),
+            `SkewPrgP per 90min`=round(skewness(PrgP_per90, na.rm = TRUE),2),
+            `SkewPrgC per 90min`=round(skewness(PrgC_per90, na.rm = TRUE),2),
+            `SkewTackles per 90min`= round(skewness(Tkl_per90, na.rm = TRUE),2),
+            `SkewBlocks per 90min`= round(skewness(Blocks_per90, na.rm = TRUE),2),
+            `SkewTacklesW per 90min`= round(skewness(TklW_per90,na.rm=TRUE),2),
+            `SkewCmpP per 90min`= round(skewness(CmpP_per90, na.rm=TRUE),2),
+            `SkewAerialsWonp`=round(skewness(meanAerial, na.rm = TRUE),2),
+            `SkewTacklesWp`=round(skewness(meanTklWp, na.rm = TRUE),2),
+            `KurtosisAge (years)`=round(kurtosis(Age, na.rm = TRUE),2),
+            `KurtosisMinutes Played`=round(kurtosis(totalMin, na.rm = TRUE),2),
+            `KurtosisInterceptions per 90min`= round(kurtosis(Int_per90, na.rm = TRUE),2),
+            `KurtosisPrgP per 90min`= round(kurtosis(PrgP_per90, na.rm = TRUE),2),
+            `KurtosisPrgC per 90min`= round(kurtosis(PrgC_per90, na.rm = TRUE),2),
+            `KurtosisTackles per 90min`= round(kurtosis(Tkl_per90, na.rm = TRUE),2),
+            `KurtosisBlocks per 90min`= round(kurtosis(Blocks_per90, na.rm = TRUE),2),
+            `KurtosisTacklesW per 90min`= round(kurtosis(TklW_per90, na.rm = TRUE),2),
+            `KurtosisCmpP per 90min`= round(kurtosis(CmpP_per90, na.rm = TRUE),2),
+            `KurtosisAerialsWonp`= round(kurtosis(meanAerial, na.rm = TRUE),2),
+            `KurtosisTacklesWp`= round(kurtosis(meanTklWp, na.rm = TRUE),2),)  %>%
+  pivot_longer(
+    cols = everything(),
+    names_to = c(".value", "Statistic"),
+    names_pattern = "(Skew|Kurtosis)(.*)"
+  )
+
+```
+
+### Top Performers
+
+```{r top-performers, include=FALSE, warning=FALSE}
+
+#---------------------------------------------
+# Analysis
+#---------------------------------------------
+# Top Performers
+#---------------------------------------------
+
+# View the top 5 players for each KPI
+TopPlayersInt <- CombinedDataF1%>%
+  arrange(desc(Int_per90)) %>%
+  slice(1:5)
+
+TopPlayersPrgC <- CombinedDataF1%>%
+  arrange(desc(PrgC_per90)) %>%
+  slice(1:5)
+
+TopPlayersTklW <- CombinedDataF1%>%
+  arrange(desc(TklW_per90)) %>%
+  slice(1:5)
+
+TopPlayersTklWp <- CombinedDataF1%>%
+  arrange(desc(meanTklWp)) %>%
+  slice(1:5)
+
+TopPlayersPrgP <- CombinedDataF1%>%
+  arrange(desc(PrgP_per90)) %>%
+  slice(1:5)
+
+TopPlayersTkl <- CombinedDataF1%>%
+  arrange(desc(Tkl_per90)) %>%
+  slice(1:5)
+
+TopPlayersBlk <- CombinedDataF1%>%
+  arrange(desc(Blocks_per90)) %>%
+  slice(1:5)
+
+TopPlayersCmpP <- CombinedDataF1%>%
+  arrange(desc(CmpP_per90)) %>%
+  slice(1:5)
+
+TopPlayersAer <- CombinedDataF1%>%
+  arrange(desc(meanAerial)) %>%
+  slice(1:5)
+
+```
+
+The analysis revealed that different players excelled in different aspects of defensive play. The player with the highest number of interceptions per-90 minutes was Alice Pellinghelli (3.02). However, she does not appear in the top five for any of the other KPIs (Figure 1).
+
+```{r figure-1, echo=FALSE, fig.height=5, fig.width=8, warning=FALSE}
+
+# Create a bar chart to visualise top 5 player performance 
+Figure1<-ggplot(TopPlayersInt, aes(reorder(Player,Int_per90),
+                                          y=Int_per90)) + geom_col(fill = "#00BFC4", width = 0.8, show.legend = FALSE) + 
+  coord_flip()+
+  theme(plot.title = element_text(hjust=0.5, colour="Black",
+                                  size=12)) + labs(y="No of Interceptions per 90 mins", x= "Player")
+Figure1
+
+```
+##### Figure 1. Top 5 Players for Interceptions
+
+The top performer for progressive carries was Ona Batlle, who made 5.46 progressive carries per-90 minutes, significantly outperforming other players in this category (Figure 2).
+
+```{r figure-2, echo=FALSE, fig.height=5, fig.width=8, warning=FALSE}
+
+# Create a bar chart to visualise top 5 player performance 
+Figure2<-ggplot(TopPlayersPrgC, aes(reorder(Player,PrgC_per90),
+                                   y=PrgC_per90)) + geom_col(fill = "#00BFC4", width = 0.8, show.legend = FALSE) + 
+  coord_flip()+
+  theme(plot.title = element_text(hjust=0.5, colour="Black",
+                                  size=12)) + labs(y="No of Progressive Carries per 90 mins", x= "Player")
+Figure2
+
+```
+##### Figure 2. Top 5 Players for Progressive Carries
+
+The top performer for tackles won per-90 minutes was Kethna Louis (3.02) and the fifth was Raquel Morcillo (2.49) illustrating little variation in the top five for this metric (Figure 3).
+
+```{r figure-3, echo=FALSE, fig.height=5, fig.width=8, warning=FALSE}
+
+# Create a bar chart to visualise top 5 player performance 
+Figure3<-ggplot(TopPlayersTklW, aes(reorder(Player,TklW_per90),
+                                    y=TklW_per90)) + geom_col(fill = "#00BFC4", width = 0.8, show.legend = FALSE) + 
+  coord_flip()+
+  theme(plot.title = element_text(hjust=0.5, colour="Black",
+                                  size=12)) + labs(y="No of Tackles Won per 90 mins", x= "Player")
+Figure3
+
+```
+##### Figure 3. Top 5 Players for Tackles Won
+
+Again, there is not much variation between the top five performers and the percentage of tackles they win per 90 minutes, with there being only a 3% difference between number one (88%) and number five (85%) (Figure 4).
+
+```{r figure-4, echo=FALSE, fig.height=5, fig.width=8, warning=FALSE}
+
+# Create a bar chart to visualise top 5 player performance 
+Figure4<-ggplot(TopPlayersTklWp, aes(reorder(Player,meanTklWp),
+                                    y=meanTklWp)) + geom_col(fill = "#00BFC4", width = 0.8, show.legend = FALSE) + 
+  coord_flip()+
+  theme(plot.title = element_text(hjust=0.5, colour="Black",
+                                  size=12)) + labs(y="Percentage of Tackles Won", x= "Player")
+Figure4
+
+```
+##### Figure 4. Top 5 Players for % of Tackles Won
+
+### Comparison between the top players and Melbourne Victory players
+
+```{r compare-data, include=FALSE, warning=FALSE}
+
+#---------------------------------------------
+# Comparison of Top Performers vs MV
+#---------------------------------------------
+
+# Compare Melbourne Victory players with top 5 players across all leagues 
+CompareData <- bind_rows(
+  PlayersfromMV %>% mutate(Group = "Melbourne Victory"),
+  TopPlayersInt %>% mutate(Group = "Top 5 across all leagues")
+) %>%
+  mutate(Player = reorder(Player, -Int_per90))
+
+# Compare Melbourne Victory players with top 5 players across all leagues 
+CompareData2 <- bind_rows(
+  PlayersfromMV %>% mutate(Group = "Melbourne Victory"),
+  TopPlayersPrgC %>% mutate(Group = "Top 5 across all leagues")
+) %>%
+  mutate(Player = reorder(Player, -PrgC_per90))
+
+# Compare Melbourne Victory players with top 5 players across all leagues 
+CompareData3 <- bind_rows(
+  PlayersfromMV %>% mutate(Group = "Melbourne Victory"),
+  TopPlayersTklW %>% mutate(Group = "Top 5 across all leagues")
+) %>%
+  mutate(Player = reorder(Player, -TklW_per90))
+
+# Compare Melbourne Victory players with top 5 players across all leagues
+CompareData4 <- bind_rows(
+  PlayersfromMV %>% mutate(Group = "Melbourne Victory"),
+  TopPlayersTklWp %>% mutate(Group = "Top 5 across all leagues")
+  ) %>%
+  mutate(Player = reorder(Player, -meanTklWp))
+
+```
+
+To assess the performance of Melbourne Victory players in relation to the top players from the six leagues, comparative bar charts were created for several KPIs.
+
+Figures 5, 6, and 7, illustrate a substantial gap between Melbourne Victory's defenders and the top players across all six leagues.
+
+```{r figure-5, echo=FALSE, fig.height=5, fig.width=10, warning=FALSE}
+
+# Create bar chart to visualise this comparison 
+ggplot(CompareData, aes(x = reorder(Player, Int_per90), y = Int_per90, fill = Group)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Player",
+       y = "Interceptions per 90 Minutes") +
+  coord_flip()+
+  theme_minimal() 
+
+```
+##### Figure 5. Interceptions per 90 Minutes: Melbourne Victory vs Top 5 across all leagues
+
+```{r figure-6, echo=FALSE, fig.height=5, fig.width=10, warning=FALSE}
+
+# Create bar chart to visualise this comparison 
+ggplot(CompareData2, aes(x = reorder(Player, PrgC_per90), y = PrgC_per90, fill = Group)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Player",
+       y = "Progressive Carries per 90 Minutes") +
+  coord_flip()+
+  theme_minimal() 
+
+```
+##### Figure 6. Progressive Carries per 90 Minutes: Melbourne Victory vs Top 5 across all leagues
+
+```{r figure-7, echo=FALSE, fig.height=5, fig.width=10, warning=FALSE}
+
+# Create bar chart to visualise this comparison 
+ggplot(CompareData3, aes(x = reorder(Player, TklW_per90), y = TklW_per90, fill = Group)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Player",
+       y = "Tackles Won per 90 Minutes") +
+  coord_flip()+
+  theme_minimal() 
+
+```
+##### Figure 7. Tackles Won per 90 Minutes: Melbourne Victory vs Top 5 across all leagues
+
+In Figure 8, although Melbourne Victory still trail behind the top performers, the gap is considerably smaller.
+
+```{r figure-8, echo=FALSE, fig.height=5, fig.width=10, warning=FALSE}
+
+# Create the bar chart to visualise this comparison
+ggplot(CompareData4, aes(x = reorder(Player, meanTklWp), y = meanTklWp, fill = Group)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Player",
+       y = "Percentage of Tackles Won") +
+  coord_flip()+
+  theme_minimal() 
+
+```
+##### Figure 8. Percentage of Tackles Won: Melbourne Victory vs Top 5 across all leagues
+
+### Normalised data and weighting scores
+
+```{r normalise-weights, include=FALSE, warning=FALSE}
+
+#---------------------------------------------
+# Normalisation and Weighting
+#---------------------------------------------
+
+# Normalise data across full dataset
+ColumnsToNormalize <- c("totalMin", "Int_per90", "PrgC_per90", "PrgP_per90", "Tkl_per90", "Blocks_per90", "CmpP_per90", "TklW_per90", "meanAerial", "meanTklWp")
+
+# Compute the maximum values for the specified columns. To normalise to 1 we will need to know the max value present for each KPI in the full dataset, this will be listed in a vector called MaxValues.
+MaxValues <- apply(CombinedDataF1[,ColumnsToNormalize], 2, max,na.rm=TRUE)
+
+# Normalize the specified columns (column values / MaxValues)
+NormalizedColumnsDF <- sweep(CombinedDataF1[, ColumnsToNormalize], 2, MaxValues, "/")
+colnames(NormalizedColumnsDF) <- paste('Norm', colnames(NormalizedColumnsDF), sep = '_')
+
+# Add the normalized columns back to the filtered data frame
+CombinedDataF1 <- cbind(CombinedDataF1, NormalizedColumnsDF)
+
+
+# Normalise data across Melbourne Victory dataset
+ColumnsToNormalizeMV <- c("totalMin", "Int_per90", "PrgC_per90", "PrgP_per90", "Tkl_per90", "Blocks_per90", "CmpP_per90", "TklW_per90", "meanAerial", "meanTklWp")
+
+# Compute the maximum values for the specified columns. To normalise to 1 we will need to know the max value present for each KPI in the full dataset, this will be listed in a vector called MaxValuesMV.
+MaxValuesMV <- apply(PlayersfromMV[,ColumnsToNormalizeMV], 2, max,na.rm=TRUE)
+
+# Normalize the specified columns (column values / MaxValuesMV)
+NormalizedColumnsMV <- sweep(PlayersfromMV[, ColumnsToNormalizeMV], 2, MaxValues, "/")
+colnames(NormalizedColumnsMV) <- paste('Norm', colnames(NormalizedColumnsMV), sep = '_')
+
+# Add the normalized columns back to the filtered data frame
+PlayersfromMV <- cbind(PlayersfromMV, NormalizedColumnsMV)
+
+
+# Weighting scores across full dataset
+weighting <- data.frame(Norm_Int_per90 = 0.2,
+                            Norm_PrgC_per90 = 0.2,
+                            Norm_TklW_per90 = 0.15,
+                            Norm_meanTklWp = 0.15,
+                            Norm_totalMin = 0.05,
+                            Norm_Tkl_per90 = 0.05,
+                            Norm_Blocks_per90 = 0.05,
+                            Norm_PrgP_per90 = 0.05,
+                            Norm_meanAerial = 0.05,
+                            Norm_CmpP_per90 = 0.05)
+
+weighted_score <- CombinedDataF1 %>%
+  mutate(Int_weight = Norm_Int_per90 * weighting$Norm_Int_per90[1],
+         PrgC_weight = Norm_PrgC_per90 * weighting$Norm_PrgC_per90[1],
+         TklW_weight = Norm_TklW_per90 * weighting$Norm_TklW_per90[1],
+         TklWp_weight = Norm_meanTklWp * weighting$Norm_meanTklWp[1],
+         Min_weight = Norm_totalMin * weighting$Norm_totalMin[1],
+         Tkl_weight = Norm_Tkl_per90 * weighting$Norm_Tkl_per90[1],
+         Blocks_weight = Norm_Blocks_per90 * weighting$Norm_Blocks_per90[1],
+         PrgP_weight = Norm_PrgP_per90 * weighting$Norm_PrgP_per90[1],
+         Aerial_weight = Norm_meanAerial * weighting$Norm_meanAerial[1],
+         CmpP_weight = Norm_CmpP_per90 * weighting$Norm_CmpP_per90[1]) %>%
+  mutate(total_score = rowSums(select(.,ends_with("_weight"))))
+
+weighted_score <- weighted_score %>%
+  arrange(desc(total_score))
+
+
+# Weighting scores for only MV
+weightingMV <- data.frame(Norm_Int_per90 = 0.2,
+                        Norm_PrgC_per90 = 0.2,
+                        Norm_TklW_per90 = 0.15,
+                        Norm_meanTklWp = 0.15,
+                        Norm_totalMin = 0.05,
+                        Norm_Tkl_per90 = 0.05,
+                        Norm_Blocks_per90 = 0.05,
+                        Norm_PrgP_per90 = 0.05,
+                        Norm_meanAerial = 0.05,
+                        Norm_CmpP_per90 = 0.05)
+
+weighted_scoreMV <- PlayersfromMV %>%
+  mutate(Int_weight = Norm_Int_per90 * weighting$Norm_Int_per90[1],
+         PrgC_weight = Norm_PrgC_per90 * weighting$Norm_PrgC_per90[1],
+         TklW_weight = Norm_TklW_per90 * weighting$Norm_TklW_per90[1],
+         TklWp_weight = Norm_meanTklWp * weighting$Norm_meanTklWp[1],
+         Min_weight = Norm_totalMin * weighting$Norm_totalMin[1],
+         Tkl_weight = Norm_Tkl_per90 * weighting$Norm_Tkl_per90[1],
+         Blocks_weight = Norm_Blocks_per90 * weighting$Norm_Blocks_per90[1],
+         PrgP_weight = Norm_PrgP_per90 * weighting$Norm_PrgP_per90[1],
+         Aerial_weight = Norm_meanAerial * weighting$Norm_meanAerial[1],
+         CmpP_weight = Norm_CmpP_per90 * weighting$Norm_CmpP_per90[1]) %>%
+  mutate(total_score = rowSums(select(.,ends_with("_weight"))))
+
+weighted_scoreMV <- weighted_scoreMV %>%
+  arrange(desc(total_score))
+
+```
+
+To further understand player performance, a weighting system used the normalised data to calculate an overall performance score for each player. The resulting weighted scores highlighted the top-performing players across all KPIs. When compared to Melbourne Victory players, the top performers demonstrated significantly higher total scores, emphasising the performance gap (Figure 9). The weighted scores revealed the following top players: 1. Marie Müller (0.70) 2. Ona Batlle (0.69) 3. Lena Ostermeier (0.67) 4. Raquel Morcillo(0.65) 5. Alyssa Malonson (0.65)
+
+```{r compare, include=FALSE, warning=FALSE}
+
+# Compare Melbourne Victory players with top 5 players across all leagues
+TopPlayersWeights <- weighted_score%>%
+  arrange(desc(total_score)) %>%
+  slice(1:5)
+
+CompareWeights <- bind_rows(
+  weighted_scoreMV %>% mutate(Group = "Melbourne Victory"),
+  TopPlayersWeights %>% mutate(Group = "Top Player Scores"))
+
+```
+
+```{r figure-9, echo=FALSE, fig.height=5, fig.width=10, warning=FALSE}
+
+Figure9<-ggplot(CompareWeights, aes(reorder(Player,total_score),
+                                     y=total_score, fill = Group)) + geom_col(show.legend = TRUE) + 
+  coord_flip()+
+  theme(plot.title = element_text(hjust=0.5,
+                                  size=12)) + labs(y="Total Score", x= "Player")
+Figure9
+
+```
+##### Figure 9. Total scores: Melbourne Victory vs Top 5 across all leagues
+
+Radar charts (Figure 10-14), illustrate the performance of the top five players across each KPI, with a comparison to the dataset average.
+
+
+```{r figure-10, echo=FALSE, fig.height=8, fig.width=12, warning=FALSE}
+
+#---------------------------------------------
+# Top Performers Radar Charts
+#---------------------------------------------
+
+# Sample data for each of the top 5 players vs the average
+Marie_Avg <- data.frame(
+  Player = c("Marie Müller", "Average"),
+  Total_minutes = c(0.97, 0.57),
+  Interceptions_per90 = c(0.83, 0.42),
+  ProgressiveCarries_per90 = c(0.46, 0.16),
+  ProgressivePasses_per90 = c(0.41, 0.27),
+  Tackles_per90 = c(0.75, 0.41),
+  Blocks_per90 = c(0.63, 0.44),
+  CompletedPasses_per90 = c(0.47, 0.39),
+  TacklesWon_per90 = c(0.64, 0.39),
+  meanAerialsWon = c(0.84, 0.57),
+  meanTacklesWon = c(0.95, 0.64)
+) 
+
+# Prepare data for radar plot 
+radar_data1 <- Marie_Avg
+radar_data1 <- rbind(rep(1, ncol(radar_data1)), rep(0, ncol(radar_data1)), radar_data1)
+
+# Assign row names for better labeling
+rownames(radar_data1) <- c("Max", "Min", Marie_Avg$Player)
+
+# Create the radar plot
+radar_data_numeric1 <- radar_data1[, -1]  # Removes the first column (Player)
+colors <- c("#00BFC4", "#F8766D")
+radarchart(
+  radar_data_numeric1,
+  axistype = 1,
+  pcol = colors,
+  pfcol = adjustcolor(colors, alpha.f = 0.25),
+  plwd = 2,
+  cglcol = "grey",
+  cglty = 1,
+  axislabcol = "black",
+  caxislabels = seq(0, 1, 0.2),
+  vlcex = 0.8,
+  title = "Marie Müller vs Average"
+)
+
+# Add legend
+legend(
+  x = 1.2,
+  y= 1.2,
+  legend = Marie_Avg$Player,
+  col = colors,
+  lty = 1,
+  lwd = 2,
+  bty = "n",
+  cex = 0.8
+)
+
+```
+##### Figure 10. Marie Müller vs Average
+
+
+```{r figure-11, echo=FALSE, fig.height=8, fig.width=12, warning=FALSE}
+
+# Sample data for each of the top 5 players vs the average
+Ona_Avg <- data.frame(
+  Player = c("Ona Batlle", "Average"),
+  Total_minutes = c(0.57, 0.57),
+  Interceptions_per90 = c(0.46, 0.42),
+  ProgressiveCarries_per90 = c(1.0, 0.16),
+  ProgressivePasses_per90 = c(0.56, 0.27),
+  Tackles_per90 = c(0.64, 0.41),
+  Blocks_per90 = c(0.50, 0.44),
+  CompletedPasses_per90 = c(0.76, 0.39),
+  TacklesWon_per90 = c(0.62, 0.39),
+  meanAerialsWon = c(0.55, 0.57),
+  meanTacklesWon = c(0.81, 0.64)
+) 
+
+# Prepare data for radar plot 
+radar_data2 <- Ona_Avg
+radar_data2 <- rbind(rep(1, ncol(radar_data2)), rep(0, ncol(radar_data2)), radar_data2)
+
+# Assign row names for better labeling
+rownames(radar_data2) <- c("Max", "Min", Ona_Avg$Player)
+
+# Create the radar plot
+radar_data_numeric2 <- radar_data2[, -1]  # Removes the first column (Player)
+colors <- c("#00BFC4", "#F8766D")
+radarchart(
+  radar_data_numeric2,
+  axistype = 1,
+  pcol = colors,
+  pfcol = adjustcolor(colors, alpha.f = 0.25),
+  plwd = 2,
+  cglcol = "grey",
+  cglty = 1,
+  axislabcol = "black",
+  caxislabels = seq(0, 1, 0.2),
+  vlcex = 0.8,
+  title = "Ona Batlle vs Average"
+)
+
+# Add legend
+legend(
+  x = 1.2,
+  y= 1.2,
+  legend = Ona_Avg$Player,
+  col = colors,
+  lty = 1,
+  lwd = 2,
+  bty = "n",
+  cex = 0.8
+)
+
+```
+##### Figure 11. Ona Batlle vs Average
+
+
+```{r figure-12, echo=FALSE, fig.height=8, fig.width=12, warning=FALSE}
+
+# Sample data for each of the top 5 players vs the average
+Lena_Avg <- data.frame(
+  Player = c("Lena Ostermeier", "Average"),
+  tTotal_minutes = c(0.73, 0.57),
+  Interceptions_per90 = c(0.89, 0.42),
+  ProgressiveCarries_per90 = c(0.22, 0.16),
+  ProgressivePasses_per90 = c(0.36, 0.27),
+  Tackles_per90 = c(0.91, 0.41),
+  Blocks_per90 = c(0.82, 0.44),
+  CompletedPasses_per90 = c(0.36, 0.39),
+  TacklesWon_per90 = c(0.90, 0.39),
+  meanAerialsWon = c(0.60, 0.57),
+  meanTacklesWon= c(0.84, 0.64)
+) 
+
+# Prepare data for radar plot 
+radar_data3 <- Lena_Avg
+radar_data3 <- rbind(rep(1, ncol(radar_data3)), rep(0, ncol(radar_data3)), radar_data3)
+
+# Assign row names for better labeling
+rownames(radar_data3) <- c("Max", "Min", Lena_Avg$Player)
+
+# Create the radar plot
+radar_data_numeric3 <- radar_data3[, -1]  # Removes the first column (Player)
+colors <- c("#00BFC4", "#F8766D")
+radarchart(
+  radar_data_numeric3,
+  axistype = 1,
+  pcol = colors,
+  pfcol = adjustcolor(colors, alpha.f = 0.25),
+  plwd = 2,
+  cglcol = "grey",
+  cglty = 1,
+  axislabcol = "black",
+  caxislabels = seq(0, 1, 0.2),
+  vlcex = 0.8,
+  title = "Lena Ostermeier vs Average"
+)
+
+# Add legend
+legend(
+  x = 1.2,
+  y= 1.2,
+  legend = Lena_Avg$Player,
+  col = colors,
+  lty = 1,
+  lwd = 2,
+  bty = "n",
+  cex = 0.8
+)
+
+```
+##### Figure 12. Lena Ostermeier vs Average
+
+
+```{r figure-13, echo=FALSE, fig.height=8, fig.width=12, warning=FALSE}
+
+# Sample data for each of the top 5 players vs the average
+Raquel_Avg <- data.frame(
+  Player = c("Raquel Morcillo", "Average"),
+  Total_minutes = c(0.79, 0.57),
+  Interceptions_per90 = c(0.91, 0.42),
+  ProgressiveCarries_per90 = c(0.15, 0.16),
+  ProgressivePasses_per90 = c(0.16, 0.27),
+  Tackles_per90 = c(0.76, 0.41),
+  Blocks_per90 = c(0.69, 0.44),
+  CompletedPasses_per90 = c(0.31, 0.39),
+  TacklesWon_per90 = c(0.83, 0.39),
+  meanAerialsWon = c(0.67, 0.57),
+  meanTacklesWon = c(0.98, 0.64)
+  ) 
+
+# Prepare data for radar plot 
+radar_data4 <- Raquel_Avg
+radar_data4 <- rbind(rep(1, ncol(radar_data4)), rep(0, ncol(radar_data4)), radar_data4)
+
+# Assign row names for better labeling
+rownames(radar_data4) <- c("Max", "Min", Raquel_Avg$Player)
+
+# Create the radar plot
+radar_data_numeric4 <- radar_data4[, -1]  # Removes the first column (Player)
+colors <- c("#00BFC4", "#F8766D")
+radarchart(
+  radar_data_numeric4,
+  axistype = 1,
+  pcol = colors,
+  pfcol = adjustcolor(colors, alpha.f = 0.25),
+  plwd = 2,
+  cglcol = "grey",
+  cglty = 1,
+  axislabcol = "black",
+  caxislabels = seq(0, 1, 0.2),
+  vlcex = 0.8,
+  title = "Raquel Morcillo vs Average"
+)
+
+# Add legend
+legend(
+  x = 1.2,
+  y= 1.2,
+  legend = Raquel_Avg$Player,
+  col = colors,
+  lty = 1,
+  lwd = 2,
+  bty = "n",
+  cex = 0.8
+)
+
+```
+##### Figure 13. Raquel Morcillo vs Average
+
+
+```{r figure-14, echo=FALSE, fig.height=8, fig.width=12, warning=FALSE}
+
+# Sample data for each of the top 5 players vs the average
+Alyssa_Avg <- data.frame(
+  Player = c("Alyssa Malonson", "Average"),
+  Total_minutes = c(0.47, 0.57),
+  Interceptions_per90 = c(0.95, 0.42),
+  ProgressiveCarries_per90 = c(0.49, 0.16),
+  ProgressivePasses_per90 = c(0.38, 0.27),
+  Tackles_per90 = c(0.85, 0.41),
+  Blocks_per90 = c(0.48, 0.44),
+  CompletedPasses_per90 = c(0.42, 0.39),
+  TacklesWon_per90 = c(0.63, 0.39),
+  meanAerialsWon = c(0.85, 0.57),
+  meanTacklesWon = c(0.60, 0.64)
+  ) 
+
+# Prepare data for radar plot 
+radar_data5 <- Alyssa_Avg
+radar_data5 <- rbind(rep(1, ncol(radar_data5)), rep(0, ncol(radar_data5)), radar_data5)
+
+# Assign row names for better labeling
+rownames(radar_data5) <- c("Max", "Min", Alyssa_Avg$Player)
+
+# Create the radar plot
+radar_data_numeric5 <- radar_data5[, -1]  # Removes the first column (Player)
+colors <- c("#00BFC4", "#F8766D")
+radarchart(
+  radar_data_numeric5,
+  axistype = 1,
+  pcol = colors,
+  pfcol = adjustcolor(colors, alpha.f = 0.25),
+  plwd = 2,
+  cglcol = "grey",
+  cglty = 1,
+  axislabcol = "black",
+  caxislabels = seq(0, 1, 0.2),
+  vlcex = 0.8,
+  title = "Alyssa Malonson vs Average"
+)
+
+# Add legend
+legend(
+  x = 1.2,
+  y= 1.2,
+  legend = Alyssa_Avg$Player,
+  col = colors,
+  lty = 1,
+  lwd = 2,
+  bty = "n",
+  cex = 0.8
+)
+
+```
+##### Figure 14. Alyssa Malonson vs Average
+
+\newpage
+
+## Discussion
+
+The primary aim of this study was to provide Melbourne Victory with a data-driven strategy for improving their defence. This involved identifying top defensive players from various leagues who could strengthen the team and analysing the underperformance of the club’s current defenders to identify areas for improvement. Integrating data from multiple leagues provides a robust foundation for comparative analysis.
+
+A key strength of this study is its integration of league strength, allowing fair comparisons across leagues and enhancing data reliability [@phatak_context_2022]. Analysis of key KPIs – interceptions, progressive carries, tackles won, and tackle success rate – highlighted diverse strengths among top players. Alice Pellinghelli leads significantly in interceptions (3.01 per-90 minutes) but lacked versatility. Ona Batlle, with the highest progressive carries (5.46 per-90 minutes), aligns with Melbourne Victory’s emphasis on being strong on the ball and transitioning from defence to attack. Kethna Louis led in tackles won (3.02), but her lower success rate suggests a more aggressive, riskier style compared to Raquel Morcillo who was still top five for tackles won (2.49) but demonstrated consistent defensive reliability (88% tackle success rate).
+
+The analysis revealed significant gaps between Melbourne Victory’s defenders and global top performers in interceptions, progressive carries, and tackles won, indicating that Melbourne Victory’s defenders may lack anticipation and the ability to use visual-perceptual information that is required to intercept passes [@muller_temporal_2024]. This emphasises the importance of incorporating anticipation and ball-carrying drills into training sessions and prioritising recruiting players, like Müller, who excel in these areas. Melbourne Victory may lag in the number of tackles won, but their higher tackle success rate indicates an ability to execute tackles effectively while minimising risks.
+
+Normalising datasets enhances data quality, and ensures comparability between players [@phatak_context_2022; @singh_investigating_2020]. Weighting prioritises critical KPIs that align with Melbourne Victory’s needs, without neglecting other relevant metrics. This provided a balanced and holistic evaluation of player performance. The top five recommended players – Marie Müller, Ona Batlle, Lena Ostermeier, Raquel Morcillo, and Alyssa Malonson – demonstrated superior scores (0.70-0.65) exceeding Melbourne Victory’s best defender (0.34).
+
+Radar charts visualise the top five players, clearly highlighting performance compared to global averages [@casals_violinboxplot_2023]. Marie Müller excels all round, Alyssa Malonson excels more progressively, and Raquel Morcillo excels in defensive actions like blocks and tackles.
+
+### Limitations
+
+Some KPIs may reflect team playing styles. Progressive teams may produce players who have higher counts of progressive carries, while defensive teams may have more blocks. This is evident within nationalities too; [@gai_physical_2019] found that in the Chinese Football Super League, domestic defenders were discriminated from foreign players by more crosses, and less aerial and ground challenges. Another limitation is that tackling, though often used as a KPI, has minimal influence on match results [@freitas_elite-level_2023], questioning its validity as a KPI.
+
+Additionally, possession discrepancies were not factored, which may distort defensive evaluations; teams with lower possession have more opportunities to intercept or tackle, as players are only able to contribute defensively when they are not in possession of the ball [@phatak_context_2022; @pretto_development_2022]. Furthermore, neither player budgets nor injury histories were accounted for in this analysis. Both factors are essential for practical recruitment. It is important for Melbourne Victory look at the players health records alongside this analysis to assess whether they are fit for their team.
+
+Finally, KPIs primarily derived from men’s football may not fully capture the nuances of the women’s game, highlighting the need for more research in this area of women’s football.
+
+### Future Analyses
+
+Future analyses should address the above limitations to improve predictions. Moreover, physiological data will lead to more accurate and usable predictions as it plays a role in predicting performance [@cortez_football_2022].
+
+Predictive models such as linear discriminant analysis (LDA) and support vector machines (SVM) – found to perform with accuracy of 83.77% and 80.31% respectively [@chavan_recruitment_2019] – could refine recruitment by generating shortlists of candidates. Shortlists should be complemented with video analysis of each player, which can be presented to professional scouts for judgment.
+
+### Conclusion
+
+This case study provides Melbourne Victory with data-driven insights to enhance their defensive capabilities by identifying top players for recruitment. By analysing KPIs such as interceptions, progressive carries, and tackles won, the study highlights significant performance gaps between Melbourne Victory’s current defenders and top global performers. The recommended players, Marie Müller, Ona Batlle, Lena Ostermeier, Raquel Morcillo, and Alyssa Malonson, offer the skills needed to strengthen the teams defence. Future analyses could refine this approach using predictive models alongside video analysis to add context.
+
+\newpage
+
+## References
+
+::: {#refs}
+:::
+
+\newpage
+
+## Appendix 1: R Code
+
+```{r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
+```
