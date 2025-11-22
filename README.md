@@ -20,3 +20,5 @@ This project demonstrates how data analytics can complement traditional scouting
 'Recruitment.pdf' shows the full report 
 
 'Recruitment.Rmd' shows the rmd report
+
+'Recruitment Data.RData' shows the data used 
