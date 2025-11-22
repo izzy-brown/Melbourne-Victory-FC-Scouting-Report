@@ -1,5 +1,5 @@
 # Melbourne-Victory-FC-Scouting-Report
-Player recruitment analysis for Melbourne Victory FC (women’s team) 
+Player recruitment analysis for Melbourne Victory FC (women’s team).
 
 I conducted a full data-driven scouting analysis using R to identify potential defensive recruits for Melbourne Victory.
 
@@ -17,8 +17,8 @@ Using player data from FBref across six major women’s leagues (FA WSL, NWSL, L
 
 This project demonstrates how data analytics can complement traditional scouting, improving decision-making and efficiency in football recruitment.
 
-'Recruitment.pdf' shows the full report 
+'Recruitment.pdf' shows the full report.
 
-'Recruitment.Rmd' shows the rmd report
+'Recruitment.Rmd' shows the rmd report.
 
-'Recruitment Data.RData' shows the data used 
+'Recruitment Data.RData' shows the data used. 
